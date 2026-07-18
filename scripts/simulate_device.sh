@@ -11,7 +11,7 @@
 
 set -euo pipefail
 
-DEFAULT_URL="http://localhost:3000/api/readings"
+DEFAULT_URL="http://localhost:3010/api/readings"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 STATE_DIR="$SCRIPT_DIR/.simulate_device_state"
 
