@@ -1,3 +1,4 @@
 .DS_Store
 node_modules
 *.log
+scripts/.simulate_device_state/
