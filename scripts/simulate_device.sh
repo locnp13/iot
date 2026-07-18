@@ -11,7 +11,7 @@
 
 set -euo pipefail
 
-DEFAULT_URL="https://your-project.vercel.app/api/readings"
+DEFAULT_URL="http://localhost:3000/api/readings"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 STATE_DIR="$SCRIPT_DIR/.simulate_device_state"
 
@@ -33,8 +33,8 @@ Options:
   -h, --help                Hiện hướng dẫn này
 
 Ví dụ:
-  $(basename "$0") -t "tok_abc,tok_def,tok_ghi" -u https://myapp.vercel.app/api/readings -c 5 -i 2
-  $(basename "$0") -f devices.txt -n 10
+  $(basename "$0") -t "tok_abc,tok_def,tok_ghi" -c 5 -i 2          # gửi vào local server ($DEFAULT_URL)
+  $(basename "$0") -f devices.txt -n 10 -u https://myapp.vercel.app/api/readings
 EOF
 }
 
