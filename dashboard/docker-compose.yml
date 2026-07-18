@@ -1,0 +1,52 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_USER: dashboard
+      POSTGRES_PASSWORD: dashboard
+      POSTGRES_DB: dashboard
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./db/schema.sql:/docker-entrypoint-initdb.d/schema.sql:ro
+    ports:
+      - '5432:5432'
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U dashboard']
+      interval: 2s
+      timeout: 5s
+      retries: 15
+
+  # Bridges the @neondatabase/serverless driver's WebSocket wire protocol to plain Postgres,
+  # so lib/db.ts can run unmodified against a real local Postgres instead of Neon's cloud.
+  wsproxy:
+    image: ghcr.io/neondatabase/wsproxy:latest
+    environment:
+      # The client (lib/db.ts's Pool, via neonConfig.wsProxy) already sends the full
+      # "host:port" as its address, so APPEND_PORT must stay unset — setting it would get
+      # concatenated onto the client-supplied address (e.g. "postgres:5432postgres:5432").
+      ALLOW_ADDR_REGEX: '.*'
+      LOG_TRAFFIC: 'true'
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  app:
+    build: .
+    ports:
+      - '3010:3000'
+    environment:
+      DATABASE_URL: postgres://dashboard:dashboard@postgres:5432/dashboard
+      LOCAL_WSPROXY: wsproxy:80/v1
+      JWT_SECRET: local-dev-secret-change-me
+      HMR_CLIENT_PORT: '3010' # must match the host-side port in the `ports:` mapping below
+    volumes:
+      - .:/app
+      - /app/node_modules
+    depends_on:
+      postgres:
+        condition: service_healthy
+      wsproxy:
+        condition: service_started
+
+volumes:
+  pgdata:

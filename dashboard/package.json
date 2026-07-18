@@ -1,0 +1,43 @@
+{
+  "name": "dashboard",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "dev:container": "node scripts/local-server.mjs",
+    "build": "tsc -b && vite build",
+    "lint": "oxlint",
+    "preview": "vite preview",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test"
+  },
+  "dependencies": {
+    "@neondatabase/serverless": "^1.1.0",
+    "@phosphor-icons/react": "^2.1.10",
+    "@tanstack/react-query": "^5.101.2",
+    "argon2": "^0.44.0",
+    "jsonwebtoken": "^9.0.3",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "react-router": "^7.18.1",
+    "recharts": "^3.9.2"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.61.1",
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/node": "^24.13.2",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.3",
+    "@vitest/coverage-v8": "^4.1.10",
+    "oxlint": "^1.71.0",
+    "tailwindcss": "^4.3.3",
+    "typescript": "~6.0.2",
+    "vercel": "^56.3.1",
+    "vite": "^8.1.1",
+    "vitest": "^4.1.10"
+  }
+}

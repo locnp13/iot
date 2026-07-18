@@ -1,0 +1,64 @@
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap');
+@import "tailwindcss";
+
+/* Theme matched to docs.fptcloud.com (Docusaurus): --ifm-color-primary #1a56db,
+   font-family Inter / JetBrains Mono, dark background #1b1b1d / surface #242526. */
+@theme {
+  --font-sans: "Inter", system-ui, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, monospace;
+
+  --color-primary: #1a56db;
+  --color-primary-foreground: #ffffff;
+  --color-secondary: #3578e5;
+  --color-accent: #d97706;
+  --color-background: #ffffff;
+  --color-foreground: #1c1e21;
+  --color-muted: #f1f5fb;
+  --color-muted-foreground: #64748b;
+  --color-border: #e2e8f0;
+  --color-destructive: #dc2626;
+  --color-success: #16a34a;
+  --color-warning: #d97706;
+  --color-ring: #1a56db;
+}
+
+@layer base {
+  :root[data-theme="dark"] {
+    --color-primary: #5b85e6;
+    --color-primary-foreground: #1b1b1d;
+    --color-secondary: #3578e5;
+    --color-accent: #fbbf24;
+    --color-background: #1b1b1d;
+    --color-foreground: #e3e3e3;
+    --color-muted: #242526;
+    --color-muted-foreground: #a6a6a6;
+    --color-border: #3b3b3f;
+    --color-destructive: #f87171;
+    --color-success: #4ade80;
+    --color-warning: #fbbf24;
+    --color-ring: #5b85e6;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --color-primary: #5b85e6;
+      --color-primary-foreground: #1b1b1d;
+      --color-secondary: #3578e5;
+      --color-accent: #fbbf24;
+      --color-background: #1b1b1d;
+      --color-foreground: #e3e3e3;
+      --color-muted: #242526;
+      --color-muted-foreground: #a6a6a6;
+      --color-border: #3b3b3f;
+      --color-destructive: #f87171;
+      --color-success: #4ade80;
+      --color-warning: #fbbf24;
+      --color-ring: #5b85e6;
+    }
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans;
+    font-size: 14px;
+  }
+}

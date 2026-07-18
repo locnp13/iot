@@ -1,0 +1,54 @@
+# <type>[optional scope]: <description>
+# |<----  Using a maximum of 50 characters  ---->|
+
+
+# [optional body]
+# Explain WHY, not what. Wrap at 72 characters.
+# |<----   Try to limit each line to a maximum of 72 characters   ---->|
+
+
+# [optional footer(s)]
+# BREAKING CHANGE: <description>  (triggers MAJOR version bump)
+# Refs: #123
+# Reviewed-by: <name>
+
+
+# --- Conventional Commits (https://www.conventionalcommits.org/en/v1.0.0/) ---
+#
+# Format: <type>[optional scope][!]: <description>
+#
+# Types:
+#   feat     - a new feature (correlates with MINOR in SemVer)
+#   fix      - a bug fix (correlates with PATCH in SemVer)
+#   build    - changes to build system or external dependencies
+#   chore    - other changes that don't modify src or test files
+#   ci       - changes to CI configuration files and scripts
+#   docs     - documentation only changes
+#   style    - changes that do not affect the meaning of the code
+#   refactor - a code change that neither fixes a bug nor adds a feature
+#   perf     - a code change that improves performance
+#   test     - adding missing tests or correcting existing tests
+#
+# Scope: optional, a noun in parentheses describing the section affected
+#   e.g. feat(sensor): add DHT22 temperature reading
+#
+# Breaking change: append "!" after type/scope, or add a
+#   "BREAKING CHANGE:" footer. Correlates with MAJOR in SemVer.
+#   e.g. feat(api)!: remove deprecated /v1 endpoint
+#
+# Description: imperative, present tense, lowercase, no period at the end
+#   e.g. "add" not "added" or "adds"
+#
+# Examples:
+#   feat(auth): add JWT refresh token support
+#   fix(dashboard): correct chart timezone offset
+#   docs(readme): update installation steps
+#   refactor(mqtt): extract reconnect logic into helper
+#   perf(db): batch sensor inserts to reduce write latency
+#   test(api): add coverage for invalid device id
+#   chore(deps): bump esp32 board package to 3.0.0
+#
+#   feat(api)!: change response shape of /devices endpoint
+#
+#   BREAKING CHANGE: `/devices` now returns an object with a `data`
+#   key instead of a bare array. Update clients accordingly.
