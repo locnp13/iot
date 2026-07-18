@@ -1,6 +1,6 @@
-import { deleteDevice } from '../../../lib/db';
-import { requireAuth, requireDeviceOwnership, handleAuthError } from '../../../lib/auth';
-import type { ApiRequest, ApiResponse } from '../../../lib/types';
+import { deleteDevice } from '../../../lib/db.js';
+import { requireAuth, requireDeviceOwnership, handleAuthError } from '../../../lib/auth.js';
+import type { ApiRequest, ApiResponse } from '../../../lib/types.js';
 
 export default async function handler(req: ApiRequest, res: ApiResponse) {
   if (req.method !== 'DELETE') {

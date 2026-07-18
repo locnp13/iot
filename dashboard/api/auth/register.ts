@@ -1,6 +1,6 @@
-import { createUser, findUserByEmail } from '../../lib/db';
-import { hashPassword } from '../../lib/auth';
-import type { ApiRequest, ApiResponse } from '../../lib/types';
+import { createUser, findUserByEmail } from '../../lib/db.js';
+import { hashPassword } from '../../lib/auth.js';
+import type { ApiRequest, ApiResponse } from '../../lib/types.js';
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MIN_PASSWORD_LENGTH = 8;

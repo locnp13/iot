@@ -1,7 +1,7 @@
-import { createDevice, listDevicesForUser, listReadingsForDevice } from '../../lib/db';
-import { requireAuth, handleAuthError, generateDeviceToken, hashToken } from '../../lib/auth';
-import { computeHealth } from '../../lib/health';
-import type { ApiRequest, ApiResponse } from '../../lib/types';
+import { createDevice, listDevicesForUser, listReadingsForDevice } from '../../lib/db.js';
+import { requireAuth, handleAuthError, generateDeviceToken, hashToken } from '../../lib/auth.js';
+import { computeHealth } from '../../lib/health.js';
+import type { ApiRequest, ApiResponse } from '../../lib/types.js';
 
 export default async function handler(req: ApiRequest, res: ApiResponse) {
   try {

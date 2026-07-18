@@ -1,8 +1,8 @@
 import jwt from 'jsonwebtoken';
 import crypto from 'node:crypto';
 import argon2 from 'argon2';
-import { findUserById, findDeviceByTokenHash, findDeviceById, type Device } from './db';
-import type { ApiRequest, ApiResponse } from './types';
+import { findUserById, findDeviceByTokenHash, findDeviceById, type Device } from './db.js';
+import type { ApiRequest, ApiResponse } from './types.js';
 
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET) {

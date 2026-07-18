@@ -1,4 +1,4 @@
-import type { Reading } from './db';
+import type { Reading } from './db.js';
 
 export type HealthStatus = 'stable' | 'degrading' | 'replace';
 

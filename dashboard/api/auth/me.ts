@@ -1,6 +1,6 @@
-import { findUserById } from '../../lib/db';
-import { requireAuth, handleAuthError } from '../../lib/auth';
-import type { ApiRequest, ApiResponse } from '../../lib/types';
+import { findUserById } from '../../lib/db.js';
+import { requireAuth, handleAuthError } from '../../lib/auth.js';
+import type { ApiRequest, ApiResponse } from '../../lib/types.js';
 
 export default async function handler(req: ApiRequest, res: ApiResponse) {
   if (req.method !== 'GET') {

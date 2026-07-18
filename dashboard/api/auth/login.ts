@@ -1,6 +1,6 @@
-import { findUserByEmail } from '../../lib/db';
-import { verifyPassword, signSession, sessionCookie } from '../../lib/auth';
-import type { ApiRequest, ApiResponse } from '../../lib/types';
+import { findUserByEmail } from '../../lib/db.js';
+import { verifyPassword, signSession, sessionCookie } from '../../lib/auth.js';
+import type { ApiRequest, ApiResponse } from '../../lib/types.js';
 
 export default async function handler(req: ApiRequest, res: ApiResponse) {
   if (req.method !== 'POST') {

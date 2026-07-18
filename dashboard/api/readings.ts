@@ -1,6 +1,6 @@
-import { insertReading } from '../lib/db';
-import { requireDeviceToken, handleAuthError } from '../lib/auth';
-import type { ApiRequest, ApiResponse } from '../lib/types';
+import { insertReading } from '../lib/db.js';
+import { requireDeviceToken, handleAuthError } from '../lib/auth.js';
+import type { ApiRequest, ApiResponse } from '../lib/types.js';
 
 interface ReadingPayload {
   cycle?: number;
