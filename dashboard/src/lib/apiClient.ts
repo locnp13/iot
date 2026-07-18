@@ -70,5 +70,7 @@ export const api = {
   regenerateToken: (deviceId: number) =>
     request<{ token: string }>(`/devices/${deviceId}/regenerate-token`, { method: 'POST' }),
 
+  deleteDevice: (deviceId: number) => request<{ ok: true }>(`/devices/${deviceId}`, { method: 'DELETE' }),
+
   getReadings: (deviceId: number) => request<ReadingWithHealth[]>(`/devices/${deviceId}/readings`),
 };

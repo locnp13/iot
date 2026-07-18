@@ -55,3 +55,12 @@ export async function mockRegenerateToken(page: Page, deviceId: number, token: s
     route.fulfill({ status: 200, json: { token } }),
   );
 }
+
+export async function mockDeleteDevice(page: Page, deviceId: number) {
+  await page.route(`**/api/devices/${deviceId}`, (route) => {
+    if (route.request().method() === 'DELETE') {
+      return route.fulfill({ status: 200, json: { ok: true } });
+    }
+    return route.continue();
+  });
+}

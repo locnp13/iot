@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { mockLoggedIn, mockDevices, mockReadings, mockRegenerateToken } from './helpers';
+import { mockLoggedIn, mockDevices, mockReadings, mockRegenerateToken, mockDeleteDevice } from './helpers';
 
 const DEVICE = { id: 9, name: 'Bench pack #1', createdAt: '2026-01-01T00:00:00Z' };
 
@@ -51,5 +51,31 @@ test.describe('Device detail', () => {
     await expect(page.getByText('new-token-xyz')).toBeVisible();
     await page.getByRole('button', { name: 'Done' }).click();
     await expect(page.getByText('new-token-xyz')).not.toBeVisible();
+  });
+
+  test('cancelling the delete confirm dialog keeps the device', async ({ page }) => {
+    await mockLoggedIn(page);
+    await mockDevices(page, [DEVICE]);
+    await mockReadings(page, DEVICE.id, []);
+    await page.goto(`/devices/${DEVICE.id}`);
+
+    await page.getByRole('button', { name: 'Delete device' }).click();
+    await expect(page.getByText('Delete this device?')).toBeVisible();
+    await page.getByRole('button', { name: 'Cancel' }).click();
+    await expect(page.getByText('Delete this device?')).not.toBeVisible();
+    await expect(page).toHaveURL(`/devices/${DEVICE.id}`);
+  });
+
+  test('confirming delete removes the device and returns to the device list', async ({ page }) => {
+    await mockLoggedIn(page);
+    await mockDevices(page, [DEVICE]);
+    await mockReadings(page, DEVICE.id, []);
+    await mockDeleteDevice(page, DEVICE.id);
+    await page.goto(`/devices/${DEVICE.id}`);
+
+    await page.getByRole('button', { name: 'Delete device' }).click();
+    await expect(page.getByText('permanently delete')).toBeVisible();
+    await page.getByRole('button', { name: 'Delete', exact: true }).click();
+    await expect(page).toHaveURL('/devices');
   });
 });

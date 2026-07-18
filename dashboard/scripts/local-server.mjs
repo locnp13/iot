@@ -12,6 +12,7 @@ const routes = [
   { pattern: /^\/api\/auth\/logout$/, mod: '/api/auth/logout.ts' },
   { pattern: /^\/api\/auth\/me$/, mod: '/api/auth/me.ts' },
   { pattern: /^\/api\/devices$/, mod: '/api/devices/index.ts' },
+  { pattern: /^\/api\/devices\/([^/]+)$/, mod: '/api/devices/[id]/index.ts', params: ['id'] },
   { pattern: /^\/api\/devices\/([^/]+)\/regenerate-token$/, mod: '/api/devices/[id]/regenerate-token.ts', params: ['id'] },
   { pattern: /^\/api\/devices\/([^/]+)\/readings$/, mod: '/api/devices/[id]/readings.ts', params: ['id'] },
   { pattern: /^\/api\/readings$/, mod: '/api/readings.ts' },

@@ -5,6 +5,7 @@ const dbMock = vi.hoisted(() => ({
   listDevicesForUser: vi.fn(),
   updateDeviceToken: vi.fn(),
   listReadingsForDevice: vi.fn(),
+  deleteDevice: vi.fn(),
 }));
 vi.mock('../../lib/db', () => dbMock);
 
@@ -25,6 +26,7 @@ vi.mock('../../lib/auth', () => authMock);
 
 const { default: devicesHandler } = await import('../../api/devices/index');
 const { default: regenerateHandler } = await import('../../api/devices/[id]/regenerate-token');
+const { default: deviceByIdHandler } = await import('../../api/devices/[id]/index');
 
 function mockRes() {
   const res: any = {
@@ -132,5 +134,40 @@ describe('POST /api/devices/[id]/regenerate-token', () => {
     expect(dbMock.updateDeviceToken).toHaveBeenCalledWith(9, 'hashed:plaintext-token');
     expect(res._status).toBe(200);
     expect(res.json).toHaveBeenCalledWith({ token: 'plaintext-token' });
+  });
+});
+
+describe('DELETE /api/devices/[id]', () => {
+  it('rejects methods other than DELETE', async () => {
+    authMock.requireAuth.mockResolvedValue({ userId: 1 });
+    const res = mockRes();
+    await deviceByIdHandler({ method: 'GET', headers: {}, body: {}, query: { id: '9' }, cookies: {} }, res);
+    expect(res._status).toBe(405);
+  });
+
+  it('rejects a non-numeric device id', async () => {
+    authMock.requireAuth.mockResolvedValue({ userId: 1 });
+    const res = mockRes();
+    await deviceByIdHandler({ method: 'DELETE', headers: {}, body: {}, query: { id: 'abc' }, cookies: {} }, res);
+    expect(res._status).toBe(400);
+  });
+
+  it('rejects a caller who does not own the device (403, not 404)', async () => {
+    authMock.requireAuth.mockResolvedValue({ userId: 1 });
+    authMock.requireDeviceOwnership.mockRejectedValue({ status: 403, message: 'Not your device' });
+    const res = mockRes();
+    await deviceByIdHandler({ method: 'DELETE', headers: {}, body: {}, query: { id: '9' }, cookies: {} }, res);
+    expect(res._status).toBe(403);
+    expect(dbMock.deleteDevice).not.toHaveBeenCalled();
+  });
+
+  it('deletes the device for its owner', async () => {
+    authMock.requireAuth.mockResolvedValue({ userId: 1 });
+    authMock.requireDeviceOwnership.mockResolvedValue({ id: 9, userId: 1 });
+    const res = mockRes();
+    await deviceByIdHandler({ method: 'DELETE', headers: {}, body: {}, query: { id: '9' }, cookies: {} }, res);
+    expect(dbMock.deleteDevice).toHaveBeenCalledWith(9);
+    expect(res._status).toBe(200);
+    expect(res.json).toHaveBeenCalledWith({ ok: true });
   });
 });
