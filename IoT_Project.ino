@@ -14,7 +14,7 @@
 // ================= THÔNG TIN WIFI & API =================
 const char* ssid = "Binh Mai";
 const char* password = "08050193";
-const char* serverUrl = "https://your-project.vercel.app/api/readings";
+const char* serverUrl = "https://iot-ten-iota.vercel.app/api/readings";
 // Token thiết bị: lấy 1 lần khi bấm "Add device" trên dashboard, dán vào đây.
 // KHÔNG dùng user/pass tài khoản — token này chỉ định danh riêng thiết bị.
 const char* deviceToken = "REPLACE_WITH_DEVICE_TOKEN_FROM_DASHBOARD";
