@@ -8,6 +8,7 @@ import { Login } from './pages/Login';
 import { Register } from './pages/Register';
 import { DeviceList } from './pages/DeviceList';
 import { DeviceDetail } from './pages/DeviceDetail';
+import { NotificationCenter } from './components/NotificationCenter';
 
 const queryClient = new QueryClient();
 
@@ -52,6 +53,7 @@ function AppRoutes() {
   return (
     <BrowserRouter>
       <Header />
+      <NotificationCenter />
       <main className="mx-auto max-w-3xl px-4 pb-16">
         <Routes>
           <Route path="/" element={<Navigate to="/devices" replace />} />

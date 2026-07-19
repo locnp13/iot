@@ -16,7 +16,15 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
           const readings = await listReadingsForDevice(d.id);
           const health = computeHealth(readings);
           const latest = health.length > 0 ? health[health.length - 1] : null;
-          return { id: d.id, name: d.name, createdAt: d.createdAt, status: latest?.status ?? null };
+          return {
+            id: d.id,
+            name: d.name,
+            createdAt: d.createdAt,
+            status: latest?.status ?? null,
+            latestReading: latest
+              ? { id: latest.id, cycle: latest.cycle, rInt: latest.rInt, createdAt: latest.createdAt }
+              : null,
+          };
         }),
       );
       res.status(200).json(withStatus);
@@ -35,8 +43,15 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
       const device = await createDevice(userId, name, hashToken(token));
 
       // Plaintext token is returned exactly once — only its hash is ever stored.
-      // A brand-new device has no readings yet, so status is null (matches the GET shape).
-      res.status(201).json({ id: device.id, name: device.name, createdAt: device.createdAt, status: null, token });
+      // A brand-new device has no readings yet, so status/latestReading are null (matches the GET shape).
+      res.status(201).json({
+        id: device.id,
+        name: device.name,
+        createdAt: device.createdAt,
+        status: null,
+        latestReading: null,
+        token,
+      });
       return;
     }
 

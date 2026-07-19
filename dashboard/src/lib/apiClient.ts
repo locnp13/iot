@@ -27,11 +27,19 @@ export interface User {
   email: string;
 }
 
+export interface DeviceLatestReading {
+  id: number;
+  cycle: number;
+  rInt: number;
+  createdAt: string;
+}
+
 export interface Device {
   id: number;
   name: string;
   createdAt: string;
   status: 'stable' | 'degrading' | 'replace' | null;
+  latestReading: DeviceLatestReading | null;
 }
 
 export interface DeviceWithToken extends Device {

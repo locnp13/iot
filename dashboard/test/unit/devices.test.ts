@@ -60,10 +60,12 @@ describe('GET/POST /api/devices', () => {
     await devicesHandler({ method: 'GET', headers: {}, body: {}, query: {}, cookies: {} }, res);
     expect(dbMock.listDevicesForUser).toHaveBeenCalledWith(1);
     expect(res._status).toBe(200);
-    expect(res.json).toHaveBeenCalledWith([{ id: 1, name: 'Bench 1', createdAt: '2026-01-01', status: null }]);
+    expect(res.json).toHaveBeenCalledWith([
+      { id: 1, name: 'Bench 1', createdAt: '2026-01-01', status: null, latestReading: null },
+    ]);
   });
 
-  it('includes each device’s latest computed health status', async () => {
+  it('includes each device’s latest computed health status and latest reading marker', async () => {
     authMock.requireAuth.mockResolvedValue({ userId: 1 });
     dbMock.listDevicesForUser.mockResolvedValue([
       { id: 1, name: 'Bench 1', createdAt: '2026-01-01', userId: 1, tokenHash: 'x' },
@@ -76,6 +78,7 @@ describe('GET/POST /api/devices', () => {
     await devicesHandler({ method: 'GET', headers: {}, body: {}, query: {}, cookies: {} }, res);
     const payload = res.json.mock.calls[0][0];
     expect(payload[0].status).toBe('degrading');
+    expect(payload[0].latestReading).toEqual({ id: 2, cycle: 2, rInt: 130, createdAt: '2026-01-02' });
   });
 
   it('rejects POST with an empty device name', async () => {
@@ -97,6 +100,7 @@ describe('GET/POST /api/devices', () => {
       name: 'Bench 2',
       createdAt: '2026-01-01',
       status: null,
+      latestReading: null,
       token: 'plaintext-token',
     });
   });
