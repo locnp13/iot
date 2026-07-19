@@ -36,8 +36,9 @@ test.describe('Reading notifications', () => {
     await page.waitForTimeout(500);
     latestReading = { id: 501, cycle: 1, rInt: 42.3, createdAt: '2026-01-02T00:00:00Z' };
 
-    const toast = page.getByRole('button', { name: /Bench pack #7.*Rint: 42\.3mΩ/ });
+    const toast = page.getByRole('button').filter({ hasText: 'Bench pack #7' });
     await expect(toast).toBeVisible({ timeout: 8000 });
+    await expect(toast).toContainText('42.3mΩ');
 
     await toast.click();
     await expect(page).toHaveURL(`/devices/${DEVICE.id}`);
