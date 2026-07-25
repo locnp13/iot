@@ -34,6 +34,8 @@ export interface Device {
   userId: number;
   name: string;
   tokenHash: string;
+  rNew: number | null;
+  rEol: number | null;
   createdAt: string;
 }
 
@@ -55,7 +57,15 @@ function mapUser(row: any): User {
 }
 
 function mapDevice(row: any): Device {
-  return { id: row.id, userId: row.user_id, name: row.name, tokenHash: row.token_hash, createdAt: row.created_at };
+  return {
+    id: row.id,
+    userId: row.user_id,
+    name: row.name,
+    tokenHash: row.token_hash,
+    rNew: row.r_new,
+    rEol: row.r_eol,
+    createdAt: row.created_at,
+  };
 }
 
 function mapReading(row: any): Reading {
@@ -86,9 +96,20 @@ export async function findUserById(id: number): Promise<User | null> {
   return rows[0] ? mapUser(rows[0]) : null;
 }
 
-export async function createDevice(userId: number, name: string, tokenHash: string): Promise<Device> {
+const DEFAULT_R_NEW = 0.015; // Ω, standard rated new-condition internal resistance for a 12V motorcycle battery
+
+export async function createDevice(
+  userId: number,
+  name: string,
+  tokenHash: string,
+  rNew?: number,
+  rEol?: number,
+): Promise<Device> {
+  const finalRNew = rNew ?? DEFAULT_R_NEW;
+  const finalREol = rEol ?? finalRNew * 2; // IEEE 1188 default: EOL at 200% of new-condition resistance
   const rows = await sql`
-    INSERT INTO devices (user_id, name, token_hash) VALUES (${userId}, ${name}, ${tokenHash}) RETURNING *
+    INSERT INTO devices (user_id, name, token_hash, r_new, r_eol)
+    VALUES (${userId}, ${name}, ${tokenHash}, ${finalRNew}, ${finalREol}) RETURNING *
   `;
   return mapDevice(rows[0]);
 }
@@ -114,6 +135,11 @@ export async function updateDeviceToken(deviceId: number, tokenHash: string): Pr
 
 export async function deleteDevice(deviceId: number): Promise<void> {
   await sql`DELETE FROM devices WHERE id = ${deviceId}`;
+}
+
+export async function updateDeviceRating(deviceId: number, rNew: number, rEol?: number): Promise<void> {
+  const finalREol = rEol ?? rNew * 2; // IEEE 1188 default: EOL at 200% of new-condition resistance
+  await sql`UPDATE devices SET r_new = ${rNew}, r_eol = ${finalREol} WHERE id = ${deviceId}`;
 }
 
 export async function insertReading(

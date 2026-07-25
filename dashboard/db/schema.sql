@@ -10,8 +10,15 @@ CREATE TABLE IF NOT EXISTS devices (
   user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
   name TEXT NOT NULL,
   token_hash TEXT NOT NULL,
+  r_new REAL,
+  r_eol REAL,
   created_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+-- devices predates r_new/r_eol; CREATE TABLE IF NOT EXISTS above is a no-op against an
+-- already-provisioned database, so the columns must also be added here for existing installs.
+ALTER TABLE devices ADD COLUMN IF NOT EXISTS r_new REAL;
+ALTER TABLE devices ADD COLUMN IF NOT EXISTS r_eol REAL;
 
 CREATE INDEX IF NOT EXISTS devices_user_id_idx ON devices(user_id);
 

@@ -17,10 +17,10 @@ export default async function handler(req: ApiRequest, res: ApiResponse) {
       return;
     }
 
-    await requireDeviceOwnership(deviceId, userId);
+    const device = await requireDeviceOwnership(deviceId, userId);
 
     const readings = await listReadingsForDevice(deviceId);
-    res.status(200).json(computeHealth(readings));
+    res.status(200).json(computeHealth(readings, device));
   } catch (err) {
     if (handleAuthError(err, res)) return;
     res.status(500).json({ error: 'Unexpected error' });

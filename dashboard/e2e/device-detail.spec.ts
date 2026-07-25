@@ -1,5 +1,5 @@
 import { test, expect } from '@playwright/test';
-import { mockLoggedIn, mockDevices, mockReadings, mockRegenerateToken, mockDeleteDevice } from './helpers';
+import { mockLoggedIn, mockDevices, mockReadings, mockRegenerateToken, mockDeleteDevice, mockUpdateRating } from './helpers';
 
 const DEVICE = { id: 9, name: 'Bench pack #1', createdAt: '2026-01-01T00:00:00Z' };
 
@@ -77,5 +77,47 @@ test.describe('Device detail', () => {
     await expect(page.getByText('permanently delete')).toBeVisible();
     await page.getByRole('button', { name: 'Delete', exact: true }).click();
     await expect(page).toHaveURL('/devices');
+  });
+
+  test('shows "Not rated" for an unrated device, then displays SOH after editing the rating', async ({ page }) => {
+    await mockLoggedIn(page);
+
+    let rated = false;
+    // Editing the rating invalidates both the readings query (soh per reading) and the
+    // devices query (rNew/rEol, used by the formula panel) — both routes must reflect it.
+    await page.route('**/api/devices', (route) => {
+      if (route.request().method() !== 'GET') return route.fulfill({ status: 405, json: {} });
+      return route.fulfill({
+        status: 200,
+        json: [{ ...DEVICE, rNew: rated ? 10 : null, rEol: rated ? 20 : null }],
+      });
+    });
+    await page.route(`**/api/devices/${DEVICE.id}/readings`, (route) => {
+      const reading = {
+        id: 1, deviceId: DEVICE.id, cycle: 1, vRest: 4.0, deltaV: 0.5, iMax: 2.0, rInt: 15,
+        createdAt: '2026-01-01T00:00:00Z', percentChangeFromBaseline: 0, status: 'stable',
+        soh: rated ? 50 : null,
+      };
+      return route.fulfill({ status: 200, json: [reading] });
+    });
+    await mockUpdateRating(page, DEVICE.id, () => {
+      rated = true;
+    });
+
+    await page.goto(`/devices/${DEVICE.id}`);
+    await expect(page.getByTestId('soh-value')).toHaveText('Not rated');
+
+    await page.getByRole('button', { name: 'Edit rating' }).click();
+    await page.getByLabel(/^R_new/).fill('10');
+    await page.getByLabel(/^R_eol/).fill('20');
+    await page.getByRole('button', { name: 'Save' }).click();
+
+    await expect(page.getByTestId('soh-value')).toHaveText('50%');
+
+    // Formula disclosure: hidden by default, shows the SOH formula with this reading's actual numbers on click.
+    await expect(page.getByRole('tooltip')).not.toBeVisible();
+    await page.getByRole('button', { name: 'How is SOH calculated?' }).click();
+    await expect(page.getByRole('tooltip')).toContainText('SOH = (R_eol − R_int) / (R_eol − R_new) × 100');
+    await expect(page.getByRole('tooltip')).toContainText('(20 − 15) / (20 − 10) × 100 = 50%');
   });
 });

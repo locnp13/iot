@@ -26,20 +26,66 @@ describe('createUser / findUserByEmail mapping', () => {
 describe('createDevice / listDevicesForUser mapping', () => {
   it('maps a device row to camelCase', async () => {
     sqlMock.mockResolvedValueOnce([
-      { id: 1, user_id: 9, name: 'Bench 1', token_hash: 'th', created_at: '2026-01-01T00:00:00Z' },
+      { id: 1, user_id: 9, name: 'Bench 1', token_hash: 'th', r_new: 0.015, r_eol: 0.03, created_at: '2026-01-01T00:00:00Z' },
     ]);
     const device = await db.createDevice(9, 'Bench 1', 'th');
-    expect(device).toEqual({ id: 1, userId: 9, name: 'Bench 1', tokenHash: 'th', createdAt: '2026-01-01T00:00:00Z' });
+    expect(device).toEqual({
+      id: 1,
+      userId: 9,
+      name: 'Bench 1',
+      tokenHash: 'th',
+      rNew: 0.015,
+      rEol: 0.03,
+      createdAt: '2026-01-01T00:00:00Z',
+    });
   });
 
   it('maps a list of device rows', async () => {
     sqlMock.mockResolvedValueOnce([
-      { id: 1, user_id: 9, name: 'A', token_hash: 't1', created_at: '2026-01-01T00:00:00Z' },
-      { id: 2, user_id: 9, name: 'B', token_hash: 't2', created_at: '2026-01-02T00:00:00Z' },
+      { id: 1, user_id: 9, name: 'A', token_hash: 't1', r_new: 0.015, r_eol: 0.03, created_at: '2026-01-01T00:00:00Z' },
+      { id: 2, user_id: 9, name: 'B', token_hash: 't2', r_new: 0.015, r_eol: 0.03, created_at: '2026-01-02T00:00:00Z' },
     ]);
     const devices = await db.listDevicesForUser(9);
     expect(devices).toHaveLength(2);
-    expect(devices[1]).toEqual({ id: 2, userId: 9, name: 'B', tokenHash: 't2', createdAt: '2026-01-02T00:00:00Z' });
+    expect(devices[1]).toEqual({
+      id: 2,
+      userId: 9,
+      name: 'B',
+      tokenHash: 't2',
+      rNew: 0.015,
+      rEol: 0.03,
+      createdAt: '2026-01-02T00:00:00Z',
+    });
+  });
+
+  it('defaults r_new to 0.015 and r_eol to 2x r_new when neither is provided', async () => {
+    sqlMock.mockResolvedValueOnce([
+      { id: 1, user_id: 9, name: 'Bench 1', token_hash: 'th', r_new: 0.015, r_eol: 0.03, created_at: '2026-01-01T00:00:00Z' },
+    ]);
+    await db.createDevice(9, 'Bench 1', 'th');
+    const values = sqlMock.mock.calls[sqlMock.mock.calls.length - 1].slice(1); // [strings, ...values] — tagged template call args
+    expect(values).toContain(0.015);
+    expect(values).toContain(0.03);
+  });
+
+  it('derives r_eol as 2x r_new when only r_new is provided', async () => {
+    sqlMock.mockResolvedValueOnce([
+      { id: 1, user_id: 9, name: 'Bench 1', token_hash: 'th', r_new: 0.02, r_eol: 0.04, created_at: '2026-01-01T00:00:00Z' },
+    ]);
+    await db.createDevice(9, 'Bench 1', 'th', 0.02);
+    const values = sqlMock.mock.calls[sqlMock.mock.calls.length - 1].slice(1);
+    expect(values).toContain(0.02);
+    expect(values).toContain(0.04);
+  });
+
+  it('stores both r_new and r_eol as given when both are provided', async () => {
+    sqlMock.mockResolvedValueOnce([
+      { id: 1, user_id: 9, name: 'Bench 1', token_hash: 'th', r_new: 0.01, r_eol: 0.05, created_at: '2026-01-01T00:00:00Z' },
+    ]);
+    await db.createDevice(9, 'Bench 1', 'th', 0.01, 0.05);
+    const values = sqlMock.mock.calls[sqlMock.mock.calls.length - 1].slice(1);
+    expect(values).toContain(0.01);
+    expect(values).toContain(0.05);
   });
 });
 

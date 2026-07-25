@@ -38,6 +38,8 @@ export interface Device {
   id: number;
   name: string;
   createdAt: string;
+  rNew: number | null;
+  rEol: number | null;
   status: 'stable' | 'degrading' | 'replace' | null;
   latestReading: DeviceLatestReading | null;
 }
@@ -57,6 +59,7 @@ export interface ReadingWithHealth {
   createdAt: string;
   percentChangeFromBaseline: number;
   status: 'stable' | 'degrading' | 'replace';
+  soh: number | null;
 }
 
 export const api = {
@@ -79,6 +82,9 @@ export const api = {
     request<{ token: string }>(`/devices/${deviceId}/regenerate-token`, { method: 'POST' }),
 
   deleteDevice: (deviceId: number) => request<{ ok: true }>(`/devices/${deviceId}`, { method: 'DELETE' }),
+
+  updateDeviceRating: (deviceId: number, rNew: number, rEol?: number) =>
+    request<{ ok: true }>(`/devices/${deviceId}`, { method: 'PATCH', body: JSON.stringify({ rNew, rEol }) }),
 
   getReadings: (deviceId: number) => request<ReadingWithHealth[]>(`/devices/${deviceId}/readings`),
 };

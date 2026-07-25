@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useParams, useNavigate } from 'react-router';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { ArrowLeft, ArrowClockwise, ChartLineUp, Trash } from '@phosphor-icons/react';
+import { ArrowLeft, ArrowClockwise, ChartLineUp, Trash, Pencil } from '@phosphor-icons/react';
 import { api } from '../lib/apiClient';
 import { ErrorMessage } from '../components/ErrorMessage';
 import { HealthBadge } from '../components/HealthBadge';
@@ -9,6 +9,8 @@ import { ReadingChart } from '../components/ReadingChart';
 import { ReadingTable } from '../components/ReadingTable';
 import { TokenRevealModal } from '../components/TokenRevealModal';
 import { ConfirmDialog } from '../components/ConfirmDialog';
+import { EditRatingModal } from '../components/EditRatingModal';
+import { SohGauge } from '../components/SohGauge';
 
 export function DeviceDetail() {
   const { id } = useParams<{ id: string }>();
@@ -17,6 +19,7 @@ export function DeviceDetail() {
   const queryClient = useQueryClient();
   const [revealedToken, setRevealedToken] = useState<string | null>(null);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showEditRating, setShowEditRating] = useState(false);
 
   const devicesQuery = useQuery({ queryKey: ['devices'], queryFn: api.listDevices });
   const readingsQuery = useQuery({
@@ -37,6 +40,19 @@ export function DeviceDetail() {
     },
   });
 
+  const updateRatingMutation = useMutation({
+    mutationFn: (vars: { rNew: number; rEol?: number }) => api.updateDeviceRating(deviceId, vars.rNew, vars.rEol),
+    onSuccess: () => {
+      // SOH is recomputed server-side from stored rInt values, not stored per-reading —
+      // refetching readings is what picks up the new rating there. Devices must also be
+      // refetched: the SOH formula panel reads device.rNew/rEol directly, and that would
+      // otherwise stay stale after an edit even though the readings' soh values update.
+      queryClient.invalidateQueries({ queryKey: ['readings', deviceId] });
+      queryClient.invalidateQueries({ queryKey: ['devices'] });
+      setShowEditRating(false);
+    },
+  });
+
   const device = devicesQuery.data?.find((d) => d.id === deviceId);
   const readings = readingsQuery.data ?? [];
   const latest = readings.length > 0 ? readings[readings.length - 1] : undefined;
@@ -54,6 +70,13 @@ export function DeviceDetail() {
         </div>
         <div className="flex items-center gap-2">
           <button
+            onClick={() => setShowEditRating(true)}
+            className="flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-sm hover:bg-muted"
+          >
+            <Pencil size={16} />
+            Edit rating
+          </button>
+          <button
             onClick={() => regenerateMutation.mutate()}
             disabled={regenerateMutation.isPending}
             className="flex items-center gap-1.5 rounded-md border border-border px-3 py-1.5 text-sm hover:bg-muted disabled:opacity-50"
@@ -70,6 +93,19 @@ export function DeviceDetail() {
           </button>
         </div>
       </div>
+
+      {latest && (
+        <div className="mb-6 flex items-center gap-4 rounded-lg border border-border bg-background p-4 shadow-sm">
+          <SohGauge soh={latest.soh} rInt={latest.rInt} rNew={device?.rNew ?? null} rEol={device?.rEol ?? null} />
+          <div>
+            <p className="text-sm font-medium">Battery State of Health</p>
+            <p className="text-xs text-muted-foreground">
+              Absolute quality vs. a rated new battery — separate from the trend badge above, which only
+              compares against this device's own first reading.
+            </p>
+          </div>
+        </div>
+      )}
 
       {deleteMutation.isError && (
         <div className="mb-4">
@@ -97,6 +133,16 @@ export function DeviceDetail() {
       )}
 
       {revealedToken && <TokenRevealModal token={revealedToken} onClose={() => setRevealedToken(null)} />}
+
+      {showEditRating && (
+        <EditRatingModal
+          currentRNew={device?.rNew ?? null}
+          currentREol={device?.rEol ?? null}
+          isPending={updateRatingMutation.isPending}
+          onSave={(rNew, rEol) => updateRatingMutation.mutate({ rNew, rEol })}
+          onClose={() => setShowEditRating(false)}
+        />
+      )}
 
       {showDeleteConfirm && (
         <ConfirmDialog

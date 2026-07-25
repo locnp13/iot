@@ -91,7 +91,7 @@ describe('GET /api/devices/[id]/readings (history + health)', () => {
 
   it('returns readings with computed baseline/status for the owner', async () => {
     authMock.requireAuth.mockResolvedValue({ userId: 1 });
-    authMock.requireDeviceOwnership.mockResolvedValue({ id: 9, userId: 1 });
+    authMock.requireDeviceOwnership.mockResolvedValue({ id: 9, userId: 1, rNew: null, rEol: null });
     dbMock.listReadingsForDevice.mockResolvedValue([
       { id: 1, deviceId: 9, cycle: 1, vRest: 4, deltaV: 0.5, iMax: 2, rInt: 100, createdAt: '2026-01-01' },
       { id: 2, deviceId: 9, cycle: 2, vRest: 4, deltaV: 0.6, iMax: 2, rInt: 130, createdAt: '2026-01-02' },
@@ -102,5 +102,29 @@ describe('GET /api/devices/[id]/readings (history + health)', () => {
     const payload = res.json.mock.calls[0][0];
     expect(payload).toHaveLength(2);
     expect(payload[1].status).toBe('degrading'); // 30% above baseline (100 -> 130)
+  });
+
+  it('includes soh on each reading when the device has a rating', async () => {
+    authMock.requireAuth.mockResolvedValue({ userId: 1 });
+    authMock.requireDeviceOwnership.mockResolvedValue({ id: 9, userId: 1, rNew: 10, rEol: 20 });
+    dbMock.listReadingsForDevice.mockResolvedValue([
+      { id: 1, deviceId: 9, cycle: 1, vRest: 4, deltaV: 0.5, iMax: 2, rInt: 15, createdAt: '2026-01-01' },
+    ]);
+    const res = mockRes();
+    await historyHandler({ method: 'GET', headers: {}, body: {}, query: { id: '9' }, cookies: {} }, res);
+    const payload = res.json.mock.calls[0][0];
+    expect(payload[0].soh).toBe(50);
+  });
+
+  it('returns null soh when the device has no rating', async () => {
+    authMock.requireAuth.mockResolvedValue({ userId: 1 });
+    authMock.requireDeviceOwnership.mockResolvedValue({ id: 9, userId: 1, rNew: null, rEol: null });
+    dbMock.listReadingsForDevice.mockResolvedValue([
+      { id: 1, deviceId: 9, cycle: 1, vRest: 4, deltaV: 0.5, iMax: 2, rInt: 15, createdAt: '2026-01-01' },
+    ]);
+    const res = mockRes();
+    await historyHandler({ method: 'GET', headers: {}, body: {}, query: { id: '9' }, cookies: {} }, res);
+    const payload = res.json.mock.calls[0][0];
+    expect(payload[0].soh).toBeNull();
   });
 });

@@ -64,3 +64,13 @@ export async function mockDeleteDevice(page: Page, deviceId: number) {
     return route.continue();
   });
 }
+
+export async function mockUpdateRating(page: Page, deviceId: number, onUpdated: () => void) {
+  await page.route(`**/api/devices/${deviceId}`, (route) => {
+    if (route.request().method() === 'PATCH') {
+      onUpdated();
+      return route.fulfill({ status: 200, json: { ok: true } });
+    }
+    return route.continue();
+  });
+}

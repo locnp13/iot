@@ -45,6 +45,13 @@ This document provides the complete epic and story breakdown for the IoT Battery
 - FR17: The dashboard shall show each subsequent reading's percentage change in Rint relative to the device's baseline.
 - FR18: The dashboard shall classify a device's current health status (e.g., stable / degrading / replace) based on how far its latest Rint has drifted from baseline against a configurable threshold.
 
+**Battery Quality Assessment (SOH)**
+- FR19: The system shall allow a user to specify a battery's rated new internal resistance (R_new) when registering a device, defaulting to a standard 12V motorcycle battery value (0.015Ω) if not provided.
+- FR20: The system shall derive the end-of-life internal resistance (R_EOL) as 200% of R_new per IEEE 1188, unless the user explicitly overrides it.
+- FR21: The system shall compute an absolute State of Health percentage (SOH%) from each reading's Rint using SOH = (R_EOL − R_int) / (R_EOL − R_new) × 100, clamped to [0, 100].
+- FR22: The dashboard shall display the computed SOH% for each device's latest reading, alongside the existing baseline-drift status.
+- FR23: The dashboard shall allow a user to edit a device's R_new (and, optionally, R_EOL) after creation.
+
 ### NonFunctional Requirements
 
 - NFR1 (Power): The full measure-compute-upload cycle must stay within a bounded time budget (target ≤15s: 3s load + up to 4s Wi-Fi wait + 5s cooldown) to limit battery drain per test.
@@ -64,6 +71,7 @@ From Architecture (`architecture.md`):
 - **Ingest idempotency:** insert readings with `ON CONFLICT (device_id, cycle) DO NOTHING` so firmware retries of an already-uploaded cycle never duplicate (supports FR5).
 - **Baseline definition:** a device's baseline is the reading with the lowest `cycle` number, not the first-inserted row (supports FR16 correctness under retry conditions).
 - **Baseline/health computation location:** computed server-side in `lib/health.ts`, exposed via the reading-history endpoint — frontend only renders it (supports FR16-18).
+- **SOH formula (paper-aligned):** SOH% = (R_EOL − R_int) / (R_EOL − R_new) × 100, with R_EOL defaulting to 2×R_new per IEEE 1188 unless overridden. Computed alongside — not replacing — the existing baseline-drift status: baseline-drift measures a battery's decay relative to *its own* first reading, while SOH measures absolute condition relative to a *manufacturer-rated new battery*. Both use the same `r_int` samples but answer different questions (supports FR19-22).
 - **DB↔API naming boundary:** snake_case DB rows must be mapped to camelCase JSON exclusively inside `lib/db.ts` — no route handler does this conversion inline.
 - **Shared auth helpers:** `requireAuth()`, `requireDeviceToken()`, `requireDeviceOwnership()` in `lib/auth.ts` — every protected route must use these rather than re-implementing checks.
 - **Deployment:** Vercel Git integration — push to GitHub `main` auto-builds and deploys both the frontend and `/api` functions; env vars (`DATABASE_URL`, `JWT_SECRET`) set via Vercel dashboard.
@@ -93,6 +101,11 @@ FR15: Epic 3 - Dashboard reading history chart + table
 FR16: Epic 3 - Baseline Rint = device's lowest-cycle reading
 FR17: Epic 3 - Dashboard shows % change vs baseline
 FR18: Epic 3 - Dashboard shows health status classification
+FR19: Epic 4 - User sets R_new when registering a device
+FR20: Epic 4 - System derives R_EOL from R_new per IEEE 1188
+FR21: Epic 4 - System computes absolute SOH% from Rint
+FR22: Epic 4 - Dashboard displays SOH%
+FR23: Epic 4 - User edits R_new/R_EOL after creation
 
 ## Epic List
 
@@ -107,6 +120,10 @@ Thiết bị (đã đăng ký ở Epic 1) đo Rint, xác thực bằng token, v�
 ### Epic 3: Dashboard Đánh giá Sức khỏe Pin
 Người dùng xem được lịch sử đo của từng thiết bị, kèm % thay đổi so với baseline và trạng thái sức khỏe (stable/degrading/replace).
 **FRs covered:** FR11, FR15, FR16, FR17, FR18
+
+### Epic 4: Đánh giá Chất lượng Pin theo Chuẩn SOH
+Bên cạnh % lệch so với baseline tự thân của thiết bị (Epic 3), hệ thống tính thêm SOH% tuyệt đối — so nội trở hiện tại với nội trở chuẩn khi ắc quy còn mới (R_new) và ngưỡng hết vòng đời (R_EOL = 200% R_new theo IEEE 1188). Đây là chỉ số "chất lượng pin" thực sự như mô tả trong bài báo nghiên cứu, độc lập với lịch sử đo riêng của từng thiết bị.
+**FRs covered:** FR19, FR20, FR21, FR22, FR23
 
 ## Epic 1: Quản lý Tài khoản & Thiết bị
 
@@ -379,3 +396,75 @@ So that I can judge at a glance whether it needs replacing.
 **Given** a reading's % change vs baseline
 **When** displayed in the table
 **Then** it's shown alongside the raw Rint value for each row
+
+## Epic 4: Đánh giá Chất lượng Pin theo Chuẩn SOH
+
+Bên cạnh % lệch so với baseline tự thân của thiết bị (Epic 3), hệ thống tính thêm SOH% tuyệt đối — so nội trở hiện tại với nội trở chuẩn khi ắc quy còn mới (R_new) và ngưỡng hết vòng đời (R_EOL). Baseline-drift trả lời "ắc quy này đã tệ đi bao nhiêu so với chính nó lúc mới lắp", còn SOH trả lời "so với một ắc quy mới tinh theo chuẩn nhà sản xuất, ắc quy này còn tốt bao nhiêu phần trăm" — hai câu hỏi khác nhau, cùng tồn tại song song, không thay thế nhau.
+
+### Story 4.1: Lưu R_new/R_EOL theo từng thiết bị (Backend)
+
+As an operator,
+I want to specify my battery's rated new-condition internal resistance (R_new) when I register a device,
+So that the system can assess absolute battery quality, not just drift from its own first reading.
+
+**Acceptance Criteria:**
+
+**Given** the `devices` table exists from Epic 1
+**When** this story begins
+**Then** `devices` gains nullable columns `r_new` and `r_eol` (REAL) via `db/schema.sql`
+
+**Given** I'm creating a device
+**When** I don't provide an R_new value
+**Then** the device is created with the standard default `r_new = 0.015` (Ω, per a typical 12V motorcycle battery)
+
+**Given** I'm creating a device with a custom R_new
+**When** I don't also provide an R_EOL
+**Then** `r_eol` is stored as `2 × r_new` (IEEE 1188 default), computed server-side — not left null
+
+**Given** I provide both R_new and R_EOL explicitly
+**When** the device is created
+**Then** both values are stored exactly as given, with no server-side override
+
+### Story 4.2: Tính SOH% tuyệt đối (Backend)
+
+As an operator,
+I want each reading's SOH% computed from R_new and R_EOL,
+So that I see an absolute quality figure, not just a relative drift percentage.
+
+**Acceptance Criteria:**
+
+**Given** a device with `r_new` and `r_eol` set and a reading with a given `r_int`
+**When** `computeHealth`-equivalent logic runs in `lib/health.ts`
+**Then** `soh = clamp(((r_eol - r_int) / (r_eol - r_new)) * 100, 0, 100)` is returned alongside the existing `percentChangeFromBaseline` and `status` fields
+
+**Given** `r_int` is at or below `r_new`
+**When** SOH is computed
+**Then** SOH is clamped to 100 (never exceeds it)
+
+**Given** `r_int` is at or above `r_eol`
+**When** SOH is computed
+**Then** SOH is clamped to 0 (never negative)
+
+**Given** `GET /api/devices/:id/readings` is called for a device with R_new/R_EOL configured
+**When** the response is returned
+**Then** each reading includes its `soh` value alongside the existing baseline-drift fields
+
+### Story 4.3: Hiển thị SOH% trên Dashboard (Frontend)
+
+As an operator,
+I want to see each battery's SOH% and edit its rated R_new,
+So that I can judge absolute battery quality at a glance and correct the rated value if it was wrong at registration.
+
+**Acceptance Criteria:**
+
+**Given** a device with a computed SOH value
+**When** I view its detail page
+**Then** the latest reading's SOH% is shown prominently (e.g. next to the existing stable/degrading/replace badge), distinct from the baseline-drift percentage
+
+**Given** I own a device
+**When** I open its settings/edit view
+**Then** I can update `r_new` (and optionally `r_eol`), and the change is reflected in SOH for all readings on next view (recomputed, not stored per-reading)
+
+**Given** I try to edit R_new/R_EOL for a device I don't own
+**When** I call the update endpoint directly
+**Then** I receive a 403 (`requireDeviceOwnership` enforced)
